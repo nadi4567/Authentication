@@ -1,10 +1,11 @@
 //jshint esversion:6
+// level4 security hashing salting with bcrypt
 require("dotenv").config();
 const express = require("express");
 const ejs = require("ejs");
 const bodyParser = require("body-parser");
-const encrypt = require("mongoose-encryption");// for database encryption
-
+const bcrypt = require("bcrypt");
+const saltRounds = 10;
 const mongoose = require("mongoose");//Mongoose is an Object Data Modeling (ODM) library for MongoDB and Node.js
 const app = express();// instance of express app
 app.set('view engine', 'ejs')// ejs
@@ -22,10 +23,6 @@ const userSchema = new mongoose.Schema({
    password:String,
 });
 
-//let's encrypt our database
-const secret = process.env.SECRET;
-userSchema.plugin(encrypt,{secret:secret, encryptedFields:['password'], decryptPostSave: false});
-// besure to use plugin first befor set up model cuz we need to encrypt before model
 
 //set up a mongoose model
 const User = new mongoose.model("User",userSchema);
@@ -46,19 +43,22 @@ app.get("/register",(req,res)=>{
 // post to register route
 app.post("/register",(req,res)=>{
     // create a new user based on userSchema and model
-    const newUser = new User({
-        email:req.body.username,
-        password:req.body.password
+    bcrypt.hash(req.body.password, saltRounds, function(err, hash) {
+        const newUser = new User({
+            email:req.body.username,
+            password:hash
+        });
+        //let's save our brandnew user into our database
+    
+        newUser.save()
+          .then(()=>{
+            console.log(newUser.password)
+            res.render("secrets")
+          })
+          .catch(err=>console.log(err)) // promises async
+    
     });
-    //let's save our brandnew user into our database
-
-    newUser.save()
-      .then(()=>{
-        console.log(newUser.password)
-        res.render("secrets")
-      })
-      .catch(err=>console.log(err)) // promises async
-
+    
 });
 
 // post to login route
@@ -68,11 +68,14 @@ app.post("/login",(req,res)=>{
 
     User.findOne({email:username})
      .then((foundUser)=>{
-         if(foundUser.password === password){
-            res.render("secrets")
-         }
-         
-     })
+        //if foundUser, compare our type ps and last typed ps
+         bcrypt.compare(password, foundUser.password, function(err, result) {
+            // if result of comparing ps is true,we send our secret
+                if(result){
+                    res.render("secrets")
+                }
+            });
+        })
      .catch((err)=>{
         console.log(err.message);
         

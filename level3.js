@@ -38,7 +38,7 @@ app.get("/register",(req,res)=>{
     res.render("register")
 });
 
-
+console.log(md5("com"))
 // post to register route
 app.post("/register",(req,res)=>{
     // create a new user based on userSchema and model
@@ -64,7 +64,7 @@ app.post("/login",(req,res)=>{
 
     User.findOne({email:username})
      .then((foundUser)=>{
-         if(foundUser.password === password){
+         if(foundUser.password === md5(password)){//match ps with hash ps user typed
             res.render("secrets")
          }
          
