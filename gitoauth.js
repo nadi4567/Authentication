@@ -1,5 +1,5 @@
 //jshint esversion:6
-// level5 security with passport
+// level6 security with OAuth
 require("dotenv").config();
 const express = require("express");
 const ejs = require("ejs");
@@ -23,7 +23,7 @@ app.use(express.urlencoded({extended:true}));
 app.use(express.static(path.join(__dirname, 'public')));
 // let's add session middleware
 app.use(session({
-  secret:"Our little secret.",
+  secret:process.env.SECRET,
   resave:false,
   saveUninitialized: false
 }));
